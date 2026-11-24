@@ -9,3 +9,4 @@ sys.path.insert(0, parent_dir)
 sys.path.insert(0, backend_dir)
 
 from backend.main import app
+

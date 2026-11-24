@@ -31,16 +31,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.responses import HTMLResponse
+
 app.include_router(auth.router,     prefix="/auth",     tags=["auth"])
 app.include_router(contacts.router, prefix="/contacts", tags=["contacts"])
 app.include_router(emails.router,   prefix="/emails",   tags=["emails"])
 
-# Mount static web app
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
-else:
-    @app.get("/")
-    async def root():
-        return {"status": "ok", "message": "Credang AI Mail Automation API"}
+@app.get("/", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+async def serve_index():
+    possible_paths = [
+        os.path.join(os.path.dirname(__file__), "static", "index.html"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend", "static", "index.html"),
+        os.path.join(os.getcwd(), "backend", "static", "index.html"),
+        os.path.join(os.getcwd(), "static", "index.html")
+    ]
+    for p in possible_paths:
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+    return HTMLResponse("<h1>Credang AI Mail Automation API Live</h1>")
 

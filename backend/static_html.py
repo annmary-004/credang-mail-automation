@@ -7,17 +7,17 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.395.0/umd/lucide.min.js"></script>
   <!-- Vue 3 -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
   <!-- SheetJS for local Excel/CSV parsing preview -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    [v-cloak] { display: none; }
+    [v-cloak] { display: none !important; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
@@ -431,9 +431,10 @@
   </div>
 
   <script>
-    const { createApp } = Vue;
-
-    createApp({
+    const vueObj = window.Vue || (typeof Vue !== 'undefined' ? Vue : null);
+    if (vueObj) {
+      const { createApp } = vueObj;
+      createApp({
       data() {
         return {
           user: null,
@@ -741,6 +742,7 @@
         }
       }
     }).mount('#app');
+    }
   </script>
 </body>
 </html>

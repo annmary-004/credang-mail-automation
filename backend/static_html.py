@@ -6,745 +6,802 @@
   <title>Credang – AI Mail Automation</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.395.0/umd/lucide.min.js"></script>
-  <!-- Vue 3 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
-  <!-- SheetJS for local Excel/CSV parsing preview -->
+  <!-- SheetJS for local Excel/CSV reading -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    [v-cloak] { display: none !important; }
+    .hidden-step { display: none !important; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
-  <div id="app" v-cloak class="flex flex-col min-h-screen">
 
-    <!-- Top Navigation -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 text-white font-bold text-lg">
-            C
-          </div>
-          <div>
-            <span class="font-bold text-slate-900 tracking-tight text-lg">Credang</span>
-            <span class="ml-2 text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">AI Mail Automation</span>
-          </div>
+  <!-- Top Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20 text-white font-bold text-lg">
+          C
+        </div>
+        <div>
+          <span class="font-bold text-slate-900 tracking-tight text-lg">Credang</span>
+          <span class="ml-2 text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">AI Mail Automation</span>
+        </div>
+      </div>
+
+      <!-- Auth state header -->
+      <div id="authHeader" class="hidden items-center gap-3">
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-xs font-medium text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span id="userDisplayName">User</span>
+        </div>
+        <button onclick="logout()" class="text-xs font-semibold text-slate-600 hover:text-red-600 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-red-200 transition">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ============================================================== -->
+    <!-- SCREEN 1: LOGIN / SIGNUP -->
+    <!-- ============================================================== -->
+    <div id="authSection" class="max-w-md mx-auto my-12">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100 p-8">
+        <div class="text-center mb-6">
+          <h1 id="authTitle" class="text-2xl font-bold text-slate-900">Welcome back</h1>
+          <p id="authSubtitle" class="text-sm text-slate-500 mt-1">Sign in to start sending personalised AI emails</p>
         </div>
 
-        <!-- Auth state -->
-        <div v-if="user" class="flex items-center gap-3">
-          <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-xs font-medium text-slate-700">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>{{ user.name || user.email }}</span>
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <div id="nameFieldGroup" class="hidden">
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+            <input id="authName" type="text" placeholder="e.g. Manoj Rajendran"
+              class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
           </div>
-          <button @click="logout" class="text-xs font-semibold text-slate-600 hover:text-red-600 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-red-200 transition">
-            Sign out
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Email address</label>
+            <input id="authEmail" required type="email" placeholder="you@company.com"
+              class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+            <input id="authPassword" required type="password" placeholder="••••••••"
+              class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+          </div>
+
+          <div id="authErrorBox" class="hidden p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
+          </div>
+
+          <button id="authSubmitBtn" type="submit"
+            class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-500/25 transition">
+            Sign in
+          </button>
+        </form>
+
+        <div class="relative my-6 text-center">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+          <span class="relative px-3 bg-white text-xs text-slate-400 uppercase font-medium">Or</span>
+        </div>
+
+        <!-- Google Auth Button -->
+        <a href="/auth/google"
+          class="flex items-center justify-center gap-2.5 w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-300 transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Sign in with Google
+        </a>
+
+        <!-- Quick Demo Access -->
+        <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+          <button onclick="quickDemoLogin()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold underline">
+            🚀 Instant Demo Access (Click to bypass login)
           </button>
         </div>
+
+        <div class="mt-5 text-center text-xs text-slate-500">
+          <span id="toggleAuthText">Don't have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold hover:underline">Sign up</button></span>
+        </div>
       </div>
-    </header>
+    </div>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+    <!-- ============================================================== -->
+    <!-- SCREEN 2+: AUTHENTICATED WORKFLOW -->
+    <!-- ============================================================== -->
+    <div id="workflowSection" class="hidden space-y-8">
 
-      <!-- ============================================================== -->
-      <!-- SCREEN 1: LOGIN / SIGNUP -->
-      <!-- ============================================================== -->
-      <div v-if="!user" class="max-w-md mx-auto my-12">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-100 p-8">
-          <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-slate-900">{{ isRegistering ? 'Create your account' : 'Welcome back' }}</h1>
-            <p class="text-sm text-slate-500 mt-1">Sign in to start sending personalised AI emails</p>
+      <!-- Stepper Progress Bar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <div class="grid grid-cols-4 gap-2 text-center text-xs font-semibold">
+          <div id="stepTab1" class="py-2 px-3 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+            1. Upload Contacts
           </div>
-
-          <form @submit.prevent="handleAuth" class="space-y-4">
-            <div v-if="isRegistering">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
-              <input v-model="authForm.name" required type="text" placeholder="e.g. Manoj Rajendran"
-                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Email address</label>
-              <input v-model="authForm.email" required type="email" placeholder="you@company.com"
-                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-              <input v-model="authForm.password" required type="password" placeholder="••••••••"
-                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
-            </div>
-
-            <div v-if="authError" class="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
-              {{ authError }}
-            </div>
-
-            <button type="submit" :disabled="authLoading"
-              class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-blue-500/25 transition disabled:opacity-50">
-              <span v-if="authLoading">Please wait...</span>
-              <span v-else>{{ isRegistering ? 'Sign up' : 'Sign in' }}</span>
-            </button>
-          </form>
-
-          <div class="relative my-6 text-center">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
-            <span class="relative px-3 bg-white text-xs text-slate-400 uppercase font-medium">Or</span>
+          <div id="stepTab2" class="py-2 px-3 rounded-xl text-slate-400 bg-slate-50">
+            2. Campaign Context
           </div>
-
-          <!-- Google Auth Button -->
-          <a href="/auth/google"
-            class="flex items-center justify-center gap-2.5 w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl border border-slate-300 transition">
-            <svg class="w-4 h-4" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-            Sign in with Google
-          </a>
-
-          <!-- Quick Test Mode -->
-          <div class="mt-4 pt-4 border-t border-slate-100 text-center">
-            <button @click="quickGuestLogin" class="text-xs text-blue-600 hover:text-blue-800 font-semibold underline">
-              🚀 Instant Demo Access (Click to bypass login)
-            </button>
+          <div id="stepTab3" class="py-2 px-3 rounded-xl text-slate-400 bg-slate-50">
+            3. AI Review & Edit
           </div>
-
-          <div class="mt-5 text-center text-xs text-slate-500">
-            <span v-if="!isRegistering">Don't have an account? <button @click="isRegistering = true; authError = ''" class="text-blue-600 font-semibold hover:underline">Sign up</button></span>
-            <span v-else>Already have an account? <button @click="isRegistering = false; authError = ''" class="text-blue-600 font-semibold hover:underline">Sign in</button></span>
+          <div id="stepTab4" class="py-2 px-3 rounded-xl text-slate-400 bg-slate-50">
+            4. Live Delivery & Report
           </div>
         </div>
       </div>
 
-      <!-- ============================================================== -->
-      <!-- SCREEN 2+: AUTHENTICATED WORKFLOW -->
-      <!-- ============================================================== -->
-      <div v-else class="space-y-8">
-
-        <!-- Stepper Progress Bar -->
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-          <div class="grid grid-cols-4 gap-2 text-center text-xs font-semibold">
-            <div :class="['py-2 px-3 rounded-xl transition', currentStep === 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : currentStep > 1 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'text-slate-400 bg-slate-50']">
-              1. Upload Contacts
+      <!-- ──────────────── STEP 1: UPLOAD & PREVIEW ──────────────── -->
+      <div id="step1Content" class="space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+          <div class="max-w-xl mx-auto text-center">
+            <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-4">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             </div>
-            <div :class="['py-2 px-3 rounded-xl transition', currentStep === 2 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : currentStep > 2 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'text-slate-400 bg-slate-50']">
-              2. Campaign Context
-            </div>
-            <div :class="['py-2 px-3 rounded-xl transition', currentStep === 3 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : currentStep > 3 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'text-slate-400 bg-slate-50']">
-              3. AI Review & Edit
-            </div>
-            <div :class="['py-2 px-3 rounded-xl transition', currentStep === 4 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : currentStep > 4 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'text-slate-400 bg-slate-50']">
-              4. Live Delivery & Report
-            </div>
-          </div>
-        </div>
+            <h2 class="text-xl font-bold text-slate-900">Upload Contact List</h2>
+            <p class="text-sm text-slate-500 mt-1">Upload an Excel (.xlsx, .xls) or CSV file with your contact leads.</p>
 
-        <!-- ──────────────── STEP 1: UPLOAD & PREVIEW ──────────────── -->
-        <div v-if="currentStep === 1" class="space-y-6">
-          <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-            <div class="max-w-xl mx-auto text-center">
-              <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-4">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-              </div>
-              <h2 class="text-xl font-bold text-slate-900">Upload Contact List</h2>
-              <p class="text-sm text-slate-500 mt-1">Upload an Excel (.xlsx, .xls) or CSV file with your contact leads.</p>
-
-              <!-- Drag and drop box -->
-              <div @dragover.prevent="dragActive = true" @dragleave.prevent="dragActive = false" @drop.prevent="handleDrop"
-                :class="['mt-6 border-2 border-dashed rounded-2xl p-8 cursor-pointer transition', dragActive ? 'border-blue-500 bg-blue-50/50' : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50']"
-                @click="$refs.fileInput.click()">
-                <input ref="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" @change="handleFileSelect">
-                <p class="text-sm font-semibold text-slate-700">Click to browse or drag & drop file here</p>
-                <p class="text-xs text-slate-400 mt-1">Supports contacts.xlsx, .xls, .csv</p>
-              </div>
-
-              <!-- Quick sample load -->
-              <div class="mt-4 flex items-center justify-center gap-2">
-                <span class="text-xs text-slate-400">or test with</span>
-                <button @click="loadSampleData" class="text-xs font-semibold text-blue-600 hover:text-blue-800 underline">
-                  Sample contacts.xlsx (Manoj Rajendran & team)
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Contacts Preview Table -->
-          <div v-if="contacts.length > 0" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 class="font-bold text-slate-900">Contact Preview & Validation</h3>
-                <p class="text-xs text-slate-500">Found {{ contacts.length }} rows. Invalid, missing, or duplicate emails are highlighted.</p>
-              </div>
-
-              <!-- Column selector if needed -->
-              <div class="flex items-center gap-2">
-                <label class="text-xs font-semibold text-slate-600">Email Column:</label>
-                <select v-model="selectedEmailCol" class="text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  <option v-for="col in columns" :key="col" :value="col">{{ col }}</option>
-                </select>
-              </div>
+            <!-- Drag and drop box -->
+            <div id="dropZone" onclick="document.getElementById('fileInput').click()"
+              class="mt-6 border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-slate-50 rounded-2xl p-8 cursor-pointer transition">
+              <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleFileSelected(event)">
+              <p class="text-sm font-semibold text-slate-700">Click to browse or drag & drop file here</p>
+              <p class="text-xs text-slate-400 mt-1">Supports contacts.xlsx, .xls, .csv</p>
             </div>
 
-            <!-- Table -->
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
-                  <tr>
-                    <th class="py-3 px-4">#</th>
-                    <th v-for="col in columns" :key="col" class="py-3 px-4">{{ col }}</th>
-                    <th class="py-3 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr v-for="(row, idx) in contacts" :key="idx" :class="row._error ? 'bg-amber-50/60' : 'hover:bg-slate-50'">
-                    <td class="py-3 px-4 text-slate-400 font-mono">{{ idx + 1 }}</td>
-                    <td v-for="col in columns" :key="col" class="py-3 px-4 font-medium text-slate-800">
-                      {{ row[col] || '-' }}
-                    </td>
-                    <td class="py-3 px-4">
-                      <span v-if="!row._error" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                        Valid
-                      </span>
-                      <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">
-                        {{ row._error }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="flex justify-end pt-2">
-              <button @click="currentStep = 2" :disabled="validContactsCount === 0"
-                class="py-2.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/20 transition disabled:opacity-50">
-                Continue with {{ validContactsCount }} valid contact(s) →
+            <!-- Quick sample load -->
+            <div class="mt-4 flex items-center justify-center gap-2">
+              <span class="text-xs text-slate-400">or test with</span>
+              <button onclick="loadSampleData()" class="text-xs font-semibold text-blue-600 hover:text-blue-800 underline">
+                Sample contacts.xlsx (Manoj Rajendran & team)
               </button>
             </div>
           </div>
         </div>
 
-        <!-- ──────────────── STEP 2: CAMPAIGN CONTEXT ──────────────── -->
-        <div v-if="currentStep === 2" class="max-w-2xl mx-auto space-y-6">
-          <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+        <!-- Contacts Preview Table -->
+        <div id="previewTableCard" class="hidden bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 class="text-xl font-bold text-slate-900">Campaign Instructions & Context</h2>
-              <p class="text-sm text-slate-500 mt-1">
-                Tell the LLM the purpose of this email. Use <code class="bg-slate-100 text-blue-600 px-1.5 py-0.5 rounded text-xs font-mono font-semibold">{{Name}}</code> to personalise greetings.
-              </p>
+              <h3 class="font-bold text-slate-900">Contact Preview & Validation</h3>
+              <p id="tableSummaryText" class="text-xs text-slate-500">Loaded contacts</p>
             </div>
 
-            <div class="space-y-4">
+            <!-- Column selector -->
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-semibold text-slate-600">Email Column:</label>
+              <select id="emailColSelect" onchange="changeEmailColumn(event)" class="text-xs font-medium bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </select>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead id="previewTableHead" class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
+              </thead>
+              <tbody id="previewTableBody" class="divide-y divide-slate-100">
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button id="step1ContinueBtn" onclick="goToStep(2)"
+              class="py-2.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/20 transition">
+              Continue to Campaign Context →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──────────────── STEP 2: CAMPAIGN CONTEXT ──────────────── -->
+      <div id="step2Content" class="hidden max-w-2xl mx-auto space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Campaign Instructions & Context</h2>
+            <p class="text-sm text-slate-500 mt-1">
+              Tell the LLM the purpose of this email. Use <code class="bg-slate-100 text-blue-600 px-1.5 py-0.5 rounded text-xs font-mono font-semibold">{{Name}}</code> to personalise greetings.
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Purpose & Pitch</label>
+              <textarea id="campaignPurpose" rows="4" placeholder="e.g. Inviting AI & ML engineers to explore the Credang automated outreach platform and schedule a quick 10-minute partnership demo."
+                class="w-full text-sm rounded-xl border border-slate-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition">Inviting AI & ML engineers to test the Credang automated email outreach platform and see a 5-minute live preview.</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Purpose & Pitch</label>
-                <textarea v-model="campaign.purpose" rows="4" placeholder="e.g. Inviting AI & ML engineers to explore the Credang automated outreach platform and schedule a quick 10-minute partnership demo."
-                  class="w-full text-sm rounded-xl border border-slate-300 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"></textarea>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Tone of Voice</label>
+                <select id="campaignTone" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="Professional yet warm">Professional & Warm</option>
+                  <option value="Casual and friendly">Casual & Friendly</option>
+                  <option value="Direct and concise">Direct & Concise</option>
+                  <option value="Executive and formal">Executive & Formal</option>
+                </select>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Tone of Voice</label>
-                  <select v-model="campaign.tone" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="Professional yet warm">Professional & Warm</option>
-                    <option value="Casual and friendly">Casual & Friendly</option>
-                    <option value="Direct and concise">Direct & Concise</option>
-                    <option value="Executive and formal">Executive & Formal</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Sender Signature</label>
-                  <input v-model="campaign.sender" type="text" placeholder="e.g. Manoj Rajendran, Credang"
-                    class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-              </div>
-
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Call to Action (CTA)</label>
-                <input v-model="campaign.cta" type="text" placeholder="e.g. Would you be open to a 10-minute chat this Thursday?"
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Sender Signature</label>
+                <input id="campaignSender" type="text" value="Manoj Rajendran, Head of Data Solutions, Credang"
                   class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
-            <div class="flex items-center justify-between pt-4 border-t border-slate-100">
-              <button @click="currentStep = 1" class="text-sm font-semibold text-slate-600 hover:text-slate-800">
-                ← Back
-              </button>
-              <button @click="generateEmails" :disabled="generating"
-                class="py-2.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/20 transition flex items-center gap-2 disabled:opacity-50">
-                <span v-if="generating" class="animate-spin">⏳</span>
-                <span>{{ generating ? 'Generating with AI...' : 'Generate AI Emails →' }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ──────────────── STEP 3: REVIEW & EDIT ──────────────── -->
-        <div v-if="currentStep === 3" class="space-y-6">
-          <div class="flex items-center justify-between">
             <div>
-              <h2 class="text-xl font-bold text-slate-900">Personalised Emails Review</h2>
-              <p class="text-sm text-slate-500">Review, modify, or regenerate any message before sending.</p>
-            </div>
-            <button @click="generateEmails" :disabled="generating" class="text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 bg-white px-3 py-2 rounded-xl transition">
-              🔄 Regenerate All
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 gap-6">
-            <div v-for="(item, idx) in generatedEmails" :key="idx" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
-                    {{ (item.recipient_name || 'U').charAt(0) }}
-                  </div>
-                  <div>
-                    <h4 class="font-bold text-sm text-slate-900">{{ item.recipient_name }}</h4>
-                    <p class="text-xs text-slate-400 font-mono">{{ item.recipient_email }}</p>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <button @click="regenerateSingle(idx)" :disabled="item._regen" class="text-xs text-slate-600 hover:text-blue-600 font-medium px-2.5 py-1 rounded-lg border border-slate-200 hover:border-blue-300 transition flex items-center gap-1">
-                    <span v-if="item._regen" class="animate-spin">⏳</span>
-                    <span>Regenerate</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Subject & Body Inputs -->
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
-                  <input v-model="item.subject" type="text"
-                    class="w-full text-sm font-medium text-slate-800 rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div>
-                  <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Body</label>
-                  <textarea v-model="item.body" rows="6"
-                    class="w-full text-xs font-normal text-slate-700 rounded-xl border border-slate-200 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none leading-relaxed"></textarea>
-                </div>
-              </div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Call to Action (CTA)</label>
+              <input id="campaignCta" type="text" value="Could we connect for a quick 10-minute discovery call this Thursday?"
+                class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
           </div>
 
-          <div class="flex items-center justify-between pt-4">
-            <button @click="currentStep = 2" class="text-sm font-semibold text-slate-600 hover:text-slate-800">
-              ← Back to Context
+          <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+            <button onclick="goToStep(1)" class="text-sm font-semibold text-slate-600 hover:text-slate-800">
+              ← Back
             </button>
-            <button @click="sendAllEmails" :disabled="sending"
-              class="py-3 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-500/25 transition disabled:opacity-50 flex items-center gap-2">
-              <span v-if="sending" class="animate-spin">⏳</span>
-              <span>Send {{ generatedEmails.length }} Personalised Emails 🚀</span>
+            <button id="generateBtn" onclick="generateEmails()"
+              class="py-2.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/20 transition flex items-center gap-2">
+              <span>Generate AI Emails →</span>
             </button>
           </div>
         </div>
-
-        <!-- ──────────────── STEP 4: SEND STATUS & REPORT ──────────────── -->
-        <div v-if="currentStep === 4" class="space-y-6">
-          <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
-              <div>
-                <h2 class="text-xl font-bold text-slate-900">Email Dispatch Dashboard</h2>
-                <p class="text-xs text-slate-500 mt-1">Real-time delivery monitor with retry and CSV audit logs.</p>
-              </div>
-
-              <div class="flex items-center gap-3">
-                <a href="/emails/report" download="email_report.csv"
-                  class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow transition flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                  Download CSV Report
-                </a>
-                <button @click="restartCampaign" class="py-2.5 px-4 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl transition">
-                  + New Campaign
-                </button>
-              </div>
-            </div>
-
-            <!-- Stats Bar -->
-            <div class="grid grid-cols-3 gap-4 my-6">
-              <div class="bg-blue-50/60 border border-blue-100 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-blue-600 uppercase">Queued</div>
-                <div class="text-2xl font-bold text-blue-900 mt-1">{{ stats.queued }}</div>
-              </div>
-              <div class="bg-emerald-50/60 border border-emerald-100 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-emerald-600 uppercase">Delivered</div>
-                <div class="text-2xl font-bold text-emerald-900 mt-1">{{ stats.sent }}</div>
-              </div>
-              <div class="bg-rose-50/60 border border-rose-100 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-rose-600 uppercase">Failed</div>
-                <div class="text-2xl font-bold text-rose-900 mt-1">{{ stats.failed }}</div>
-              </div>
-            </div>
-
-            <!-- Live Table -->
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
-                  <tr>
-                    <th class="py-3 px-4">Recipient</th>
-                    <th class="py-3 px-4">Subject</th>
-                    <th class="py-3 px-4">Status</th>
-                    <th class="py-3 px-4">Timestamp / Details</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr v-for="log in emailLogs" :key="log.id" class="hover:bg-slate-50">
-                    <td class="py-3 px-4 font-semibold text-slate-800">
-                      {{ log.recipient_name }}
-                      <span class="block text-[11px] font-normal text-slate-400 font-mono">{{ log.recipient_email }}</span>
-                    </td>
-                    <td class="py-3 px-4 text-slate-600 font-medium max-w-xs truncate">{{ log.subject }}</td>
-                    <td class="py-3 px-4">
-                      <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
-                        log.status === 'sent' ? 'bg-emerald-100 text-emerald-800' :
-                        log.status === 'failed' ? 'bg-rose-100 text-rose-800' :
-                        'bg-amber-100 text-amber-800']">
-                        {{ log.status }}
-                      </span>
-                    </td>
-                    <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">
-                      {{ log.error_msg || log.sent_at || log.created_at || 'In progress...' }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </div>
-
       </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-      Credang AI Mail Automation · Full-Stack Evaluation Build
-    </footer>
-  </div>
+      <!-- ──────────────── STEP 3: REVIEW & EDIT ──────────────── -->
+      <div id="step3Content" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Personalised Emails Review</h2>
+            <p class="text-sm text-slate-500">Review, modify, or regenerate any message before sending.</p>
+          </div>
+          <button onclick="generateEmails()" class="text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-300 bg-white px-3 py-2 rounded-xl transition">
+            🔄 Regenerate All
+          </button>
+        </div>
 
+        <div id="emailsListContainer" class="grid grid-cols-1 gap-6">
+        </div>
+
+        <div class="flex items-center justify-between pt-4">
+          <button onclick="goToStep(2)" class="text-sm font-semibold text-slate-600 hover:text-slate-800">
+            ← Back to Context
+          </button>
+          <button id="sendEmailsBtn" onclick="sendAllEmails()"
+            class="py-3 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-500/25 transition flex items-center gap-2">
+            <span>Send Personalised Emails 🚀</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ──────────────── STEP 4: SEND STATUS & REPORT ──────────────── -->
+      <div id="step4Content" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Email Dispatch Dashboard</h2>
+              <p class="text-xs text-slate-500 mt-1">Real-time delivery monitor with retry and CSV audit logs.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <a href="/emails/report" download="email_report.csv"
+                class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Download CSV Report
+              </a>
+              <button onclick="restartWorkflow()" class="py-2.5 px-4 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl transition">
+                + New Campaign
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats Bar -->
+          <div class="grid grid-cols-3 gap-4 my-6">
+            <div class="bg-blue-50/60 border border-blue-100 p-4 rounded-xl">
+              <div class="text-xs font-semibold text-blue-600 uppercase">Queued</div>
+              <div id="statQueued" class="text-2xl font-bold text-blue-900 mt-1">0</div>
+            </div>
+            <div class="bg-emerald-50/60 border border-emerald-100 p-4 rounded-xl">
+              <div class="text-xs font-semibold text-emerald-600 uppercase">Delivered</div>
+              <div id="statSent" class="text-2xl font-bold text-emerald-900 mt-1">0</div>
+            </div>
+            <div class="bg-rose-50/60 border border-rose-100 p-4 rounded-xl">
+              <div class="text-xs font-semibold text-rose-600 uppercase">Failed</div>
+              <div id="statFailed" class="text-2xl font-bold text-rose-900 mt-1">0</div>
+            </div>
+          </div>
+
+          <!-- Live Table -->
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
+                <tr>
+                  <th class="py-3 px-4">Recipient</th>
+                  <th class="py-3 px-4">Subject</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4">Timestamp / Details</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody" class="divide-y divide-slate-100">
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+    Credang AI Mail Automation · Full-Stack Evaluation Build
+  </footer>
+
+  <!-- Vanilla JavaScript Logic (Zero External Frameworks - 100% Reliable) -->
   <script>
-    const vueObj = window.Vue || (typeof Vue !== 'undefined' ? Vue : null);
-    if (vueObj) {
-      const { createApp } = vueObj;
-      createApp({
-      data() {
-        return {
-          user: null,
-          token: localStorage.getItem('token') || '',
-          isRegistering: false,
-          authLoading: false,
-          authError: '',
-          authForm: { name: '', email: '', password: '' },
+    // Global Application State
+    let currentUser = null;
+    let authToken = localStorage.getItem('token') || '';
+    let isRegisterMode = false;
+    let currentStep = 1;
+    let rawContacts = [];
+    let tableColumns = [];
+    let selectedEmailColumn = '';
+    let generatedEmailsList = [];
+    let statusPollInterval = null;
 
-          currentStep: 1,
-          dragActive: false,
-          contacts: [],
-          columns: [],
-          selectedEmailCol: '',
-
-          campaign: {
-            purpose: 'Invite AI engineers and founders to test our next-generation automated outreach tool and see a 5-minute live preview.',
-            tone: 'Professional yet warm',
-            sender: 'Manoj Rajendran\nHead of Data Solutions, Credang',
-            cta: 'Could we connect for a quick 10-minute discovery call this week?'
-          },
-
-          generating: false,
-          generatedEmails: [],
-          sending: false,
-          emailLogs: [],
-          pollTimer: null
-        }
-      },
-      computed: {
-        validContactsCount() {
-          return this.contacts.filter(c => !c._error).length;
-        },
-        stats() {
-          const s = { queued: 0, sent: 0, failed: 0 };
-          this.emailLogs.forEach(l => {
-            if (l.status === 'sent') s.sent++;
-            else if (l.status === 'failed') s.failed++;
-            else s.queued++;
-          });
-          return s;
-        }
-      },
-      mounted() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token) {
-          const name = urlParams.get('name') || '';
-          const email = urlParams.get('email') || '';
-          this.token = token;
-          localStorage.setItem('token', token);
-          this.user = { name, email };
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-        if (this.token) {
-          this.fetchMe();
-        }
-      },
-      methods: {
-        async fetchMe() {
-          try {
-            const res = await fetch('/auth/me', {
-              headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-            if (res.ok) {
-              this.user = await res.json();
-            } else {
-              this.logout();
-            }
-          } catch(e) {
-            this.logout();
-          }
-        },
-        async handleAuth() {
-          this.authLoading = true;
-          this.authError = '';
-          const endpoint = this.isRegistering ? '/auth/register' : '/auth/login';
-
-          try {
-            let res;
-            if (this.isRegistering) {
-              res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.authForm)
-              });
-            } else {
-              const fd = new URLSearchParams();
-              fd.append('username', this.authForm.email);
-              fd.append('password', this.authForm.password);
-              res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: fd
-              });
-            }
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Authentication failed');
-
-            this.token = data.access_token;
-            localStorage.setItem('token', this.token);
-            this.user = { name: data.name, email: data.email };
-          } catch(err) {
-            this.authError = err.message;
-          } finally {
-            this.authLoading = false;
-          }
-        },
-        async quickGuestLogin() {
-          // Instant demo login
-          this.authForm.name = 'Manoj Rajendran';
-          this.authForm.email = 'evaluator@credang.com';
-          this.authForm.password = 'Credang2026!';
-          this.isRegistering = true;
-          await this.handleAuth();
-          if (this.authError) {
-            // Already registered, try sign in
-            this.isRegistering = false;
-            await this.handleAuth();
-          }
-        },
-        logout() {
-          this.user = null;
-          this.token = '';
-          localStorage.removeItem('token');
-        },
-
-        // File handling
-        handleDrop(e) {
-          this.dragActive = false;
-          const files = e.dataTransfer.files;
-          if (files.length) this.parseExcel(files[0]);
-        },
-        handleFileSelect(e) {
-          const files = e.target.files;
-          if (files.length) this.parseExcel(files[0]);
-        },
-        loadSampleData() {
-          const sampleRows = [
-            { "Name": "Manoj Rajendran", "Email": "manoj_rajendran@credang.com", "Company": "Credang", "Role": "Data Solutions Lead" },
-            { "Name": "Alex Morgan", "Email": "alex.m@example.com", "Company": "Apex Labs", "Role": "AI Specialist" },
-            { "Name": "Sara Chen", "Email": "sara.chen@enterprise.io", "Company": "Enterprise AI", "Role": "Director of Engineering" }
-          ];
-          this.columns = ["Name", "Email", "Company", "Role"];
-          this.selectedEmailCol = "Email";
-          this.validateAndSetContacts(sampleRows);
-        },
-        parseExcel(file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            try {
-              const data = new Uint8Array(e.target.result);
-              const workbook = XLSX.read(data, { type: 'array' });
-              const sheetName = workbook.SheetNames[0];
-              const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-              if (!json.length) return alert('The uploaded file is empty.');
-
-              this.columns = Object.keys(json[0]);
-              // Auto-detect email column
-              this.selectedEmailCol = this.columns.find(c => c.toLowerCase().includes('email') || c.toLowerCase().includes('mail')) || this.columns[0];
-              this.validateAndSetContacts(json);
-            } catch(err) {
-              alert('Failed to read file: ' + err.message);
-            }
-          };
-          reader.readAsArrayBuffer(file);
-        },
-        validateAndSetContacts(rawRows) {
-          const seenEmails = new Set();
-          this.contacts = rawRows.map(row => {
-            const email = (row[this.selectedEmailCol] || '').toString().trim();
-            let error = null;
-            if (!email) {
-              error = 'Missing Email';
-            } else if (!email.includes('@') || !email.includes('.')) {
-              error = 'Invalid Email';
-            } else if (seenEmails.has(email.toLowerCase())) {
-              error = 'Duplicate Email';
-            } else {
-              seenEmails.add(email.toLowerCase());
-            }
-            return { ...row, _error: error };
-          });
-        },
-
-        // LLM generation
-        async generateEmails() {
-          this.generating = true;
-          try {
-            const contextText = `Purpose: ${this.campaign.purpose}\nTone: ${this.campaign.tone}\nSender/Signature: ${this.campaign.sender}\nCall-to-Action: ${this.campaign.cta}`;
-            const validRows = this.contacts.filter(c => !c._error);
-
-            const res = await fetch('/emails/generate', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-              },
-              body: JSON.stringify({
-                context: contextText,
-                rows: validRows,
-                email_col: this.selectedEmailCol
-              })
-            });
-
-            if (!res.ok) throw new Error('Generation failed');
-            const data = await res.json();
-            this.generatedEmails = data.emails.map(e => ({
-              ...e,
-              recipient_name: e.Name || e.name || 'Recipient',
-              recipient_email: e[this.selectedEmailCol] || e.email
-            }));
-            this.currentStep = 3;
-          } catch(err) {
-            alert('Error generating emails: ' + err.message);
-          } finally {
-            this.generating = false;
-          }
-        },
-
-        async regenerateSingle(idx) {
-          const target = this.generatedEmails[idx];
-          target._regen = true;
-          try {
-            const contextText = `Purpose: ${this.campaign.purpose}\nTone: ${this.campaign.tone}\nSender/Signature: ${this.campaign.sender}\nCall-to-Action: ${this.campaign.cta}`;
-            const res = await fetch('/emails/regenerate', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-              },
-              body: JSON.stringify({
-                context: contextText,
-                row: target
-              })
-            });
-            const data = await res.json();
-            target.subject = data.subject;
-            target.body = data.body;
-          } catch(e) {
-            alert('Failed to regenerate: ' + e.message);
-          } finally {
-            target._regen = false;
-          }
-        },
-
-        // Sending
-        async sendAllEmails() {
-          this.sending = true;
-          try {
-            const payload = {
-              logs: this.generatedEmails.map(e => ({
-                log_id: e.log_id,
-                recipient_email: e.recipient_email,
-                subject: e.subject,
-                body: e.body
-              }))
-            };
-
-            const res = await fetch('/emails/send', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.token}`
-              },
-              body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-              const err = await res.json();
-              throw new Error(err.detail || 'Send failed');
-            }
-
-            this.currentStep = 4;
-            this.startStatusPolling();
-          } catch(err) {
-            alert('Could not start send: ' + err.message);
-          } finally {
-            this.sending = false;
-          }
-        },
-
-        startStatusPolling() {
-          if (this.pollTimer) clearInterval(this.pollTimer);
-          const poll = async () => {
-            try {
-              const res = await fetch('/emails/status', {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-              });
-              if (res.ok) {
-                const data = await res.json();
-                this.emailLogs = data.logs;
-              }
-            } catch(e) {}
-          };
-          poll();
-          this.pollTimer = setInterval(poll, 2000);
-        },
-
-        restartCampaign() {
-          if (this.pollTimer) clearInterval(this.pollTimer);
-          this.currentStep = 1;
-        }
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check query params for Google OAuth redirect
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      if (token) {
+        authToken = token;
+        localStorage.setItem('token', token);
+        const name = params.get('name') || '';
+        const email = params.get('email') || '';
+        currentUser = { name, email };
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
-    }).mount('#app');
+
+      if (authToken) {
+        verifyAuth();
+      } else {
+        showAuthScreen();
+      }
+
+      // Drag & drop listeners
+      const dropZone = document.getElementById('dropZone');
+      if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500', 'bg-blue-50'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('border-blue-500', 'bg-blue-50'); });
+        dropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+          if (e.dataTransfer.files.length) parseUploadedFile(e.dataTransfer.files[0]);
+        });
+      }
+    });
+
+    async function verifyAuth() {
+      try {
+        const res = await fetch('/auth/me', { headers: { 'Authorization': `Bearer ${authToken}` } });
+        if (res.ok) {
+          currentUser = await res.json();
+          showWorkflowScreen();
+        } else {
+          logout();
+        }
+      } catch (e) {
+        logout();
+      }
+    }
+
+    function showAuthScreen() {
+      document.getElementById('authHeader').classList.add('hidden');
+      document.getElementById('authHeader').classList.remove('flex');
+      document.getElementById('authSection').classList.remove('hidden');
+      document.getElementById('workflowSection').classList.add('hidden');
+    }
+
+    function showWorkflowScreen() {
+      document.getElementById('authHeader').classList.remove('hidden');
+      document.getElementById('authHeader').classList.add('flex');
+      document.getElementById('userDisplayName').textContent = currentUser.name || currentUser.email;
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById('workflowSection').classList.remove('hidden');
+      goToStep(1);
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById('authTitle').textContent = isRegisterMode ? 'Create your account' : 'Welcome back';
+      document.getElementById('authSubtitle').textContent = isRegisterMode ? 'Sign up to start automating emails' : 'Sign in to start sending personalised AI emails';
+      document.getElementById('nameFieldGroup').classList.toggle('hidden', !isRegisterMode);
+      document.getElementById('authSubmitBtn').textContent = isRegisterMode ? 'Sign up' : 'Sign in';
+      document.getElementById('toggleAuthText').innerHTML = isRegisterMode
+        ? 'Already have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold hover:underline">Sign in</button>'
+        : 'Don\'t have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold hover:underline">Sign up</button>';
+      document.getElementById('authErrorBox').classList.add('hidden');
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const errorBox = document.getElementById('authErrorBox');
+      errorBox.classList.add('hidden');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Please wait...';
+
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const name = document.getElementById('authName').value;
+
+      try {
+        let res;
+        if (isRegisterMode) {
+          res = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, name })
+          });
+        } else {
+          const fd = new URLSearchParams();
+          fd.append('username', email);
+          fd.append('password', password);
+          res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: fd
+          });
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Authentication failed');
+
+        authToken = data.access_token;
+        localStorage.setItem('token', authToken);
+        currentUser = { name: data.name, email: data.email };
+        showWorkflowScreen();
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isRegisterMode ? 'Sign up' : 'Sign in';
+      }
+    }
+
+    async function quickDemoLogin() {
+      document.getElementById('authEmail').value = 'evaluator@credang.com';
+      document.getElementById('authPassword').value = 'Credang2026!';
+      document.getElementById('authName').value = 'Manoj Rajendran';
+      isRegisterMode = true;
+      await handleAuthSubmit(new Event('submit'));
+      if (document.getElementById('authErrorBox').classList.contains('hidden') === false) {
+        isRegisterMode = false;
+        await handleAuthSubmit(new Event('submit'));
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      authToken = '';
+      localStorage.removeItem('token');
+      showAuthScreen();
+    }
+
+    // Step Navigation
+    function goToStep(step) {
+      currentStep = step;
+      [1, 2, 3, 4].forEach(s => {
+        document.getElementById(`step${s}Content`).classList.toggle('hidden', s !== step);
+        const tab = document.getElementById(`stepTab${s}`);
+        if (s === step) {
+          tab.className = 'py-2 px-3 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20';
+        } else if (s < step) {
+          tab.className = 'py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200';
+        } else {
+          tab.className = 'py-2 px-3 rounded-xl text-slate-400 bg-slate-50';
+        }
+      });
+    }
+
+    // File Upload & Preview Table
+    function handleFileSelected(e) {
+      if (e.target.files.length) parseUploadedFile(e.target.files[0]);
+    }
+
+    function loadSampleData() {
+      const sample = [
+        { "Name": "Manoj Rajendran", "Email": "manoj_rajendran@credang.com", "Company": "Credang", "Role": "Head of Data Solutions" },
+        { "Name": "Alex Morgan", "Email": "alex.m@apexai.io", "Company": "Apex Labs", "Role": "AI Specialist" },
+        { "Name": "Sara Chen", "Email": "sara.chen@enterprise.io", "Company": "Enterprise AI", "Role": "Director of Engineering" }
+      ];
+      tableColumns = ["Name", "Email", "Company", "Role"];
+      selectedEmailColumn = "Email";
+      renderPreview(sample);
+    }
+
+    function parseUploadedFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.SheetNames[0];
+          const json = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+          if (!json.length) return alert('The uploaded file contains no data.');
+
+          tableColumns = Object.keys(json[0]);
+          selectedEmailColumn = tableColumns.find(c => c.toLowerCase().includes('email') || c.toLowerCase().includes('mail')) || tableColumns[0];
+          renderPreview(json);
+        } catch (err) {
+          alert('Failed to parse file: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderPreview(rows) {
+      const seen = new Set();
+      rawContacts = rows.map(r => {
+        const val = (r[selectedEmailColumn] || '').toString().trim();
+        let err = null;
+        if (!val) err = 'Missing Email';
+        else if (!val.includes('@') || !val.includes('.')) err = 'Invalid Email';
+        else if (seen.has(val.toLowerCase())) err = 'Duplicate Email';
+        else seen.add(val.toLowerCase());
+        return { ...r, _error: err };
+      });
+
+      // Update Column dropdown
+      const select = document.getElementById('emailColSelect');
+      select.innerHTML = tableColumns.map(c => `<option value="${c}" ${c === selectedEmailColumn ? 'selected' : ''}>${c}</option>`).join('');
+
+      // Header
+      const head = document.getElementById('previewTableHead');
+      head.innerHTML = `<tr><th class="py-3 px-4">#</th>${tableColumns.map(c => `<th class="py-3 px-4">${c}</th>`).join('')}<th class="py-3 px-4">Status</th></tr>`;
+
+      // Body
+      const body = document.getElementById('previewTableBody');
+      body.innerHTML = rawContacts.map((r, i) => `
+        <tr class="${r._error ? 'bg-amber-50/60' : 'hover:bg-slate-50'}">
+          <td class="py-3 px-4 text-slate-400 font-mono">${i + 1}</td>
+          ${tableColumns.map(c => `<td class="py-3 px-4 font-medium text-slate-800">${r[c] || '-'}</td>`).join('')}
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${r._error ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+              ${r._error || 'Valid'}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+
+      const validCount = rawContacts.filter(c => !c._error).length;
+      document.getElementById('tableSummaryText').textContent = `Found ${rawContacts.length} rows (${validCount} valid leads ready).`;
+      document.getElementById('step1ContinueBtn').textContent = `Continue with ${validCount} valid lead(s) →`;
+      document.getElementById('previewTableCard').classList.remove('hidden');
+    }
+
+    function changeEmailColumn(e) {
+      selectedEmailColumn = e.target.value;
+      renderPreview(rawContacts);
+    }
+
+    // Step 3: LLM Generation
+    async function generateEmails() {
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin">⏳</span> Generating Personalised Emails...`;
+
+      const purpose = document.getElementById('campaignPurpose').value;
+      const tone = document.getElementById('campaignTone').value;
+      const sender = document.getElementById('campaignSender').value;
+      const cta = document.getElementById('campaignCta').value;
+      const contextText = `Purpose: ${purpose}\nTone: ${tone}\nSender/Signature: ${sender}\nCall-to-Action: ${cta}`;
+
+      const validRows = rawContacts.filter(c => !c._error);
+
+      try {
+        const res = await fetch('/emails/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            context: contextText,
+            rows: validRows,
+            email_col: selectedEmailColumn
+          })
+        });
+
+        if (!res.ok) throw new Error('Generation failed');
+        const data = await res.json();
+        generatedEmailsList = data.emails.map(e => ({
+          ...e,
+          recipient_name: e.Name || e.name || 'Recipient',
+          recipient_email: e[selectedEmailColumn] || e.email
+        }));
+
+        renderGeneratedEmails();
+        goToStep(3);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Generate AI Emails →</span>`;
+      }
+    }
+
+    function renderGeneratedEmails() {
+      const container = document.getElementById('emailsListContainer');
+      container.innerHTML = generatedEmailsList.map((item, idx) => `
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                ${(item.recipient_name || 'U').charAt(0)}
+              </div>
+              <div>
+                <h4 class="font-bold text-sm text-slate-900">${item.recipient_name}</h4>
+                <p class="text-xs text-slate-400 font-mono">${item.recipient_email}</p>
+              </div>
+            </div>
+            <button onclick="regenerateEmailSingle(${idx})" id="regenBtn_${idx}" class="text-xs text-slate-600 hover:text-blue-600 font-medium px-2.5 py-1 rounded-lg border border-slate-200 hover:border-blue-300 transition">
+              🔄 Regenerate
+            </button>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
+              <input type="text" value="${item.subject.replace(/"/g, '&quot;')}" onchange="updateEmailField(${idx}, 'subject', this.value)"
+                class="w-full text-sm font-medium text-slate-800 rounded-xl border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Body</label>
+              <textarea rows="6" onchange="updateEmailField(${idx}, 'body', this.value)"
+                class="w-full text-xs font-normal text-slate-700 rounded-xl border border-slate-200 p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none leading-relaxed">${item.body}</textarea>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('sendEmailsBtn').innerHTML = `<span>Send ${generatedEmailsList.length} Personalised Emails 🚀</span>`;
+    }
+
+    function updateEmailField(idx, field, value) {
+      generatedEmailsList[idx][field] = value;
+    }
+
+    async function regenerateEmailSingle(idx) {
+      const btn = document.getElementById(`regenBtn_${idx}`);
+      btn.textContent = '⏳ Thinking...';
+      const item = generatedEmailsList[idx];
+
+      const purpose = document.getElementById('campaignPurpose').value;
+      const tone = document.getElementById('campaignTone').value;
+      const sender = document.getElementById('campaignSender').value;
+      const cta = document.getElementById('campaignCta').value;
+      const contextText = `Purpose: ${purpose}\nTone: ${tone}\nSender/Signature: ${sender}\nCall-to-Action: ${cta}`;
+
+      try {
+        const res = await fetch('/emails/regenerate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ context: contextText, row: item })
+        });
+        const data = await res.json();
+        item.subject = data.subject;
+        item.body = data.body;
+        renderGeneratedEmails();
+      } catch (e) {
+        alert('Regeneration error: ' + e.message);
+      } finally {
+        btn.textContent = '🔄 Regenerate';
+      }
+    }
+
+    // Step 4: Dispatch
+    async function sendAllEmails() {
+      const btn = document.getElementById('sendEmailsBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span>Dispatching...</span>`;
+
+      try {
+        const payload = {
+          logs: generatedEmailsList.map(e => ({
+            log_id: e.log_id,
+            recipient_email: e.recipient_email,
+            subject: e.subject,
+            body: e.body
+          }))
+        };
+
+        const res = await fetch('/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Send failed');
+        }
+
+        goToStep(4);
+        startPolling();
+      } catch (err) {
+        alert('Send failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Send ${generatedEmailsList.length} Personalised Emails 🚀</span>`;
+      }
+    }
+
+    function startPolling() {
+      if (statusPollInterval) clearInterval(statusPollInterval);
+      const poll = async () => {
+        try {
+          const res = await fetch('/emails/status', { headers: { 'Authorization': `Bearer ${authToken}` } });
+          if (res.ok) {
+            const data = await res.json();
+            renderLiveLogs(data.logs);
+          }
+        } catch (e) {}
+      };
+      poll();
+      statusPollInterval = setInterval(poll, 2000);
+    }
+
+    function renderLiveLogs(logs) {
+      let q = 0, s = 0, f = 0;
+      logs.forEach(l => {
+        if (l.status === 'sent') s++;
+        else if (l.status === 'failed') f++;
+        else q++;
+      });
+      document.getElementById('statQueued').textContent = q;
+      document.getElementById('statSent').textContent = s;
+      document.getElementById('statFailed').textContent = f;
+
+      const body = document.getElementById('logsTableBody');
+      body.innerHTML = logs.map(l => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-semibold text-slate-800">
+            ${l.recipient_name}
+            <span class="block text-[11px] font-normal text-slate-400 font-mono">${l.recipient_email}</span>
+          </td>
+          <td class="py-3 px-4 text-slate-600 font-medium max-w-xs truncate">${l.subject}</td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              l.status === 'sent' ? 'bg-emerald-100 text-emerald-800' :
+              l.status === 'failed' ? 'bg-rose-100 text-rose-800' :
+              'bg-amber-100 text-amber-800'
+            }">
+              ${l.status}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">
+            ${l.error_msg || l.sent_at || l.created_at || 'In progress...'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function restartWorkflow() {
+      if (statusPollInterval) clearInterval(statusPollInterval);
+      goToStep(1);
     }
   </script>
 </body>
 </html>
-
 """

@@ -1,8 +1,13 @@
+import os
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.sql import func
 
-DATABASE_URL = "sqlite:///./credang.db"
+# On Vercel serverless, root filesystem is read-only; use /tmp for sqlite
+if os.environ.get("VERCEL"):
+    DATABASE_URL = "sqlite:////tmp/credang.db"
+else:
+    DATABASE_URL = "sqlite:///./credang.db"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
